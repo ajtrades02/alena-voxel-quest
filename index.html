@@ -39,6 +39,16 @@ body.touch #touch{display:block}
 #stickHint{position:fixed;left:calc(18px + env(safe-area-inset-left));bottom:calc(22px + env(safe-area-inset-bottom));width:120px;height:120px;border-radius:50%;border:4px dashed rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:rgba(255,255,255,.8);pointer-events:none;text-align:center}
 #jumpBtn{position:fixed;right:calc(20px + env(safe-area-inset-right));bottom:calc(26px + env(safe-area-inset-bottom));width:112px;height:112px;border-radius:50%;background:rgba(255,225,77,.85);border:5px solid #fff;color:#2a1a5e;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:4px 4px 0 rgba(0,0,0,.35);pointer-events:auto;touch-action:none}
 #jumpBtn.down{transform:scale(.92);background:#fff3a0}
+#rideBtn,#honkBtn{position:fixed;border-radius:50%;border:5px solid #fff;font-weight:900;display:none;align-items:center;justify-content:center;box-shadow:4px 4px 0 rgba(0,0,0,.35);pointer-events:auto;touch-action:none;z-index:5;cursor:pointer;font-family:inherit}
+#rideBtn{width:100px;height:100px;font-size:21px;background:#4dd0ff;color:#13285e}
+#honkBtn{width:74px;height:74px;font-size:15px;background:#ff9cf5;color:#3b0a45}
+#rideBtn:active,#honkBtn:active{transform:scale(.92)}
+@media (orientation:landscape){#rideBtn{right:calc(146px + env(safe-area-inset-right));bottom:calc(32px + env(safe-area-inset-bottom))}#honkBtn{right:calc(262px + env(safe-area-inset-right));bottom:calc(44px + env(safe-area-inset-bottom))}#lookHint{bottom:calc(150px + env(safe-area-inset-bottom))!important}}
+@media (orientation:portrait){#rideBtn{right:calc(26px + env(safe-area-inset-right));bottom:calc(152px + env(safe-area-inset-bottom))}#honkBtn{right:calc(38px + env(safe-area-inset-right));bottom:calc(266px + env(safe-area-inset-bottom))}#lookHint{bottom:calc(372px + env(safe-area-inset-bottom))!important}}
+body:not(.touch) #rideBtn,body:not(.touch) #honkBtn{display:none!important}
+#prompt{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));background:rgba(32,20,80,.75);border:3px solid #fff;border-radius:8px;padding:8px 14px;font-weight:900;font-size:clamp(14px,3.8vw,19px);display:none;pointer-events:none;white-space:nowrap}
+body.touch #prompt{bottom:auto;top:calc(118px + env(safe-area-inset-top))}
+#vehLabel{position:fixed;top:calc(62px + env(safe-area-inset-top));left:12px;display:none;background:#ffe14d;color:#2a1a5e;border:3px solid #fff;border-radius:6px;padding:3px 10px;font-weight:900;font-size:clamp(13px,3.6vw,18px);pointer-events:none;box-shadow:3px 3px 0 rgba(0,0,0,.35)}
 #lookHint{position:fixed;right:calc(20px + env(safe-area-inset-right));bottom:calc(150px + env(safe-area-inset-bottom));width:112px;text-align:center;font-size:12px;font-weight:900;color:rgba(255,255,255,.8);pointer-events:none}
 </style>
 </head>
@@ -51,6 +61,10 @@ body.touch #touch{display:block}
 </div>
 <div id="arrowWrap"><div id="arrow"></div></div>
 <div id="msg" class="px"></div>
+<div id="prompt"></div>
+<div id="vehLabel"></div>
+<button id="rideBtn">RIDE</button>
+<button id="honkBtn">HONK</button>
 <div id="touch">
   <div id="stickHint">MOVE<br>drag here</div>
   <div id="stickBase"><div id="stickKnob"></div></div>
@@ -59,14 +73,16 @@ body.touch #touch{display:block}
 </div>
 <div class="screen on" id="startScr"><div class="card">
   <h1 class="px">Alena's Voxel Quest</h1>
-  <h2>Help Alena collect the gems!</h2>
+  <h2>Help Alena and her puppy Biscuit collect the gems!</h2>
   <ul>
     <li>Guide Alena around the blocky island and grab all <b>12 spinning gems</b>.</li>
     <li>Avoid the <b style="color:#ff7b7b">red Grumble blocks</b> and <b>grey spikes</b>. Each hit costs Alena a heart, and she has <b>3</b>.</li>
     <li>Jump on a Grumble's head to make it dizzy! Don't fall in the water.</li>
     <li>When all gems are found, run to the <b style="color:#ff9cf5">glowing portal</b> to win. The yellow arrow points the way.</li>
-    <li><b>Keyboard:</b> WASD / arrows to move, Space to jump, Q / E or drag the mouse to turn the camera, M to mute.</li>
-    <li><b>Touch:</b> drag on the left to move, tap JUMP, drag on the right to turn the camera.</li>
+    <li><b>Ride!</b> Hop on the Range Rover, Harley Davidson, bicycles, rowboat, Bentley Speedboat or jet skis. Boats are by the wooden dock. While riding, water and spikes can't hurt Alena, and Grumbles just bounce away.</li>
+    <li>Biscuit the Yorkie puppy follows Alena everywhere and rides along too.</li>
+    <li><b>Keyboard:</b> WASD / arrows to move or steer, Space to jump, <b>E</b> to ride / get off, <b>H</b> to honk, Q / R or drag the mouse to turn the camera, M to mute.</li>
+    <li><b>Touch:</b> drag on the left to move or steer, tap JUMP, tap <b>RIDE</b> / <b>EXIT</b> near a vehicle and HONK while riding, drag on the right to turn the camera.</li>
   </ul>
   <button class="btn" id="playBtn">PLAY</button>
 </div></div>
@@ -97,23 +113,24 @@ const T=THREE;
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 const R=rng(20261011);
 // ---------- World ----------
-const N=44,H=16,WATER=1.6,GEM_COUNT=12;
+const N=64,OFF=10,H=16,WATER=1.6,GEM_COUNT=12;
 const vox=new Uint8Array(N*H*N); // 0 empty, else block type
-const B={GRASS:1,DIRT:2,SAND:3,STONE:4,SNOW:5,TRUNK:6,LEAF:7,PLAT:8,SEABED:9,LEAF2:10,PLAT2:11};
-const COL={1:0x5ec43a,2:0xa8693a,3:0xf2d27a,4:0x9aa0b4,5:0xf4f7ff,6:0x8b5a2b,7:0x2fae4a,8:0xff9f1c,9:0xd9b86a,10:0x48c96a,11:0xb06cff};
+const B={GRASS:1,DIRT:2,SAND:3,STONE:4,SNOW:5,TRUNK:6,LEAF:7,PLAT:8,SEABED:9,LEAF2:10,PLAT2:11,DOCK:12,POST:13};
+const COL={1:0x5ec43a,2:0xa8693a,3:0xf2d27a,4:0x9aa0b4,5:0xf4f7ff,6:0x8b5a2b,7:0x2fae4a,8:0xff9f1c,9:0xd9b86a,10:0x48c96a,11:0xb06cff,12:0xc08a4f,13:0x6b4423};
 const idx=(x,y,z)=>(y*N+z)*N+x;
 function get(x,y,z){if(y<0)return 1;if(x<0||z<0||x>=N||z>=N||y>=H)return y<1?9:0;return vox[idx(x,y,z)];}
 function set(x,y,z,v){if(x<0||z<0||x>=N||z>=N||y<0||y>=H)return;vox[idx(x,y,z)]=v;}
 const hgt=new Int16Array(N*N); // top surface height (ground)
 const c=(N-1)/2;
 for(let z=0;z<N;z++)for(let x=0;x<N;x++){
-  const d=Math.hypot(x-c,z-c)/(N*0.47);
+  const gx=x,gz=z;{x-=OFF;z-=OFF;}const c0=21.5;
+  const d=Math.hypot(x-c0,z-c0)/(44*0.47);
   const f=Math.sin(x*0.23)*Math.cos(z*0.19)*1.2+Math.sin((x+z)*0.12)*1.0+Math.sin(x*0.08-z*0.14)*0.8;
   const hill=4.5*Math.exp(-((x-31)**2+(z-13)**2)/28)+2.5*Math.exp(-((x-11)**2+(z-30)**2)/22);
   let h=Math.round(5.0-d*d*5.2+f+hill);
   if(d>1)h=1;
   h=Math.max(1,Math.min(H-6,h));
-  hgt[z*N+x]=h;
+  x=gx;z=gz;hgt[z*N+x]=h;
 }
 for(let z=0;z<N;z++)for(let x=0;x<N;x++){
   const h=hgt[z*N+x];
@@ -142,6 +159,16 @@ mark(spawn.x,spawn.z,3);
 let portal=null;best=-1;
 for(let z=2;z<N-2;z++)for(let x=2;x<N-2;x++){if(!reach[z*N+x]||!flatAt(x,z,1))continue;const d=Math.hypot(x-spawn.x,z-spawn.z);if(d>best){best=d;portal={x,z};}}
 mark(portal.x,portal.z,3);
+// ---------- dock (wooden pier into the sea) ----------
+const isWaterCell=(x,z)=>x>=0&&z>=0&&x<N&&z<N&&hgt[z*N+x]<=1&&!get(x,1,z);
+let dock=null;
+{let bestD=1e9;
+  for(let z=1;z<N-1;z++)for(let x=1;x<N-1;x++){if(!reach[z*N+x]||H_(x,z)!==2)continue;
+    for(const[dx,dz]of[[1,0],[-1,0],[0,1],[0,-1]]){let ok=true;
+      for(let o=1;o<=12&&ok;o++)for(let s=-3;s<=3;s++){const X=x+dx*o+(dz?s:0),Z=z+dz*o+(dx?s:0);if(!isWaterCell(X,Z))ok=false;}
+      if(!ok)continue;const d=Math.hypot(x-spawn.x,z-spawn.z);if(d>6&&d<bestD){bestD=d;dock={x,z,dx,dz};}}}
+  if(dock){for(let o=1;o<=4;o++){const X=dock.x+dock.dx*o,Z=dock.z+dock.dz*o;set(X,1,Z,B.DOCK);set(X,0,Z,B.POST);hgt[Z*N+X]=2;reach[Z*N+X]=1;used[Z*N+X]=1;}
+    mark(dock.x,dock.z,1);}}
 // platforms leading to a sky gem
 const gems=[];
 (function(){
@@ -192,6 +219,52 @@ for(let tries=0;tries<4000&&spikes.length<8;tries++){
   if(!reach[k]||used[k]||Math.hypot(x-spawn.x,z-spawn.z)<7)continue;
   spikes.push({x:x+0.5,z:z+0.5,y:H_(x,z)});used[k]=1;mark(x,z,1);
 }
+// ---------- vehicles: placement ----------
+const VT={
+  bike:{name:'Bicycle',water:false,max:6.5,acc:7,turn:3.4,hw:0.25,hl:0.75,camD:10,step:1},
+  moto:{name:'Harley Davidson',water:false,max:12.5,acc:10,turn:2.5,hw:0.3,hl:0.9,camD:11,step:1},
+  car:{name:'Range Rover',water:false,max:11,acc:7.5,turn:1.9,hw:0.75,hl:1.25,camD:12,step:1},
+  row:{name:'Rowboat',water:true,sink:0.12,max:4.5,acc:3.2,turn:1.6,hw:0.6,hl:1.15,camD:11},
+  speed:{name:'Bentley Speedboat',water:true,sink:0.16,max:12.5,acc:7,turn:1.5,hw:0.7,hl:1.5,camD:13},
+  jet:{name:'Jet Ski',water:true,sink:0.06,max:13.5,acc:11,turn:3.0,hw:0.35,hl:0.85,camD:11}};
+const vehicles=[];
+function surfaceAt(x,z,fromY){const X=Math.floor(x),Z=Math.floor(z);for(let y=Math.floor(fromY);y>=0;y--)if(get(X,y,Z))return y+1;return 0;}
+// footprint sample points
+function footprint(t,x,z,yaw){const s=Math.sin(yaw),co=Math.cos(yaw),pts=[];
+  for(const a of[-1,0,1])for(const b of[-1,0,1]){const l=a*t.hl,w=b*t.hw;pts.push([x+s*l+co*w,z+co*l-s*w]);}return pts;}
+function footOK(t,x,z,yaw,y){
+  const pts=footprint(t,x,z,yaw);
+  if(t.water){for(const[px,pz]of pts)if(!isWaterCell(Math.floor(px),Math.floor(pz)))return null;return WATER-0.12;}
+  let top=0;
+  for(const[px,pz]of pts){const X=Math.floor(px),Z=Math.floor(pz);if(X<0||Z<0||X>=N||Z>=N)return null;
+    const sf=surfaceAt(px,pz,y+t.step+0.5);
+    if(sf<2)return null;                 // water / void
+    if(sf-y>t.step+0.05)return null;      // too tall a step (or a tree trunk)
+    if(get(X,Math.floor(sf),Z)||get(X,Math.floor(sf)+1,Z))return null; // no headroom
+    top=Math.max(top,sf);}
+  return top;}
+function addVehicle(type,x,z,yaw){const t=VT[type];vehicles.push({type,t,x,z,yaw,y:0,speed:0,home:{x,z,yaw},roll:0});}
+function placeLand(type,near){
+  let bestC=null,bd=1e9;
+  for(let tries=0;tries<6000;tries++){const x=2+Math.floor(R()*(N-4)),z=2+Math.floor(R()*(N-4)),k=z*N+x;
+    if(!reach[k]||used[k]||!flatAt(x,z,1)||H_(x,z)<3)continue;
+    let free=true;for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++)if(used[(z+dz)*N+x+dx])free=false;if(!free)continue;
+    const d=Math.abs(Math.hypot(x-near.x,z-near.z)-near.r);if(d<bd){bd=d;bestC={x,z};}}
+  if(!bestC)return;const yaw=[0,Math.PI/2,Math.PI,-Math.PI/2][Math.floor(R()*4)];
+  addVehicle(type,bestC.x+0.5,bestC.z+0.5,yaw);mark(bestC.x,bestC.z,2);}
+placeLand('bike',{x:spawn.x,z:spawn.z,r:5});
+placeLand('moto',{x:spawn.x,z:spawn.z,r:9});
+placeLand('car',{x:spawn.x,z:spawn.z,r:7});
+placeLand('bike',{x:portal.x,z:portal.z,r:8});
+// water vehicles beside the dock (fallback: nearest open water)
+function placeWater(type,px,pz,yaw){const t=VT[type];
+  for(let r=0;r<20;r++)for(let a=0;a<16;a++){const x=px+Math.cos(a/16*6.283)*r*0.5,z=pz+Math.sin(a/16*6.283)*r*0.5;
+    if(footOK(t,x,z,yaw,0)!==null&&!vehicles.some(v=>Math.hypot(v.x-x,v.z-z)<2.6)){addVehicle(type,x,z,yaw);return;}}}
+if(dock){const ex=dock.x+0.5+dock.dx*4,ez=dock.z+0.5+dock.dz*4,yaw=Math.atan2(dock.dx,dock.dz),sx=dock.dz,sz=dock.dx;
+  placeWater('row',ex-dock.dx*1.5+sx*1.9,ez-dock.dz*1.5+sz*1.9,yaw);
+  placeWater('speed',ex-dock.dx*1.0-sx*2.1,ez-dock.dz*1.0-sz*2.1,yaw);
+  placeWater('jet',ex+dock.dx*2.2,ez+dock.dz*2.2,yaw);
+  placeWater('jet',ex+dock.dx*2.0+sx*2.2,ez+dock.dz*2.0+sz*2.2,yaw);}
 // trees
 for(let z=2;z<N-2;z++)for(let x=2;x<N-2;x++){
   const k=z*N+x,h=H_(x,z);
@@ -233,7 +306,7 @@ const sun=new T.DirectionalLight(0xffffff,1.25);sun.position.set(0.6,1,0.35);sce
 const box=new T.BoxGeometry(1,1,1);
 {
   const list=[];
-  for(let y=0;y<H;y++)for(let z=0;z<N;z++)for(let x=0;x<N;x++){const v=vox[idx(x,y,z)];if(!v)continue;
+  for(let y=0;y<H;y++)for(let z=0;z<N;z++)for(let x=0;x<N;x++){const v=vox[idx(x,y,z)];if(!v||v===B.SEABED)continue;
     const exposed=!get(x+1,y,z)||!get(x-1,y,z)||!get(x,y+1,z)||!get(x,y,z+1)||!get(x,y,z-1)||(y>0&&!get(x,y-1,z));
     if(exposed)list.push(x,y,z,v);}
   const n=list.length/4;
@@ -280,13 +353,94 @@ const portalTop=H_(portal.x,portal.z);
   portalG.position.set(portal.x+0.5,portalTop,portal.z+0.5);
   portalG.rotation.y=Math.atan2(spawn.x-portal.x,spawn.z-portal.z);
   scene.add(portalG);}
-// enemies
-const enemyMat=new T.MeshLambertMaterial({color:0xff4d4d}),eyeW=new T.MeshBasicMaterial({color:0xffffff}),eyeB=new T.MeshBasicMaterial({color:0x111111});
-enemies.forEach(e=>{const g=new T.Group();const b=new T.Mesh(box,enemyMat);b.scale.set(0.95,0.95,0.95);b.position.y=0.475;g.add(b);
-  for(const s of[-1,1]){const w=new T.Mesh(box,eyeW);w.scale.set(0.24,0.24,0.05);w.position.set(s*0.2,0.6,0.49);g.add(w);
-    const p=new T.Mesh(box,eyeB);p.scale.set(0.12,0.12,0.06);p.position.set(s*0.2,0.58,0.5);g.add(p);
-    const br=new T.Mesh(box,eyeB);br.scale.set(0.3,0.07,0.06);br.position.set(s*0.2,0.78,0.5);br.rotation.z=s*0.4;g.add(br);}
-  e.mesh=g;e.body=b;scene.add(g);});
+// enemies (one merged mesh each)
+function mergeBoxes(list){const base=new T.BoxGeometry(1,1,1).toNonIndexed();const bp=base.attributes.position,bn=base.attributes.normal,n=bp.count;
+  const pos=new Float32Array(list.length*n*3),nor=new Float32Array(list.length*n*3),col=new Float32Array(list.length*n*3);
+  const m=new T.Matrix4(),nm=new T.Matrix3(),v=new T.Vector3(),cc=new T.Color(),eu=new T.Euler(),qq=new T.Quaternion(),sc=new T.Vector3();
+  list.forEach((b,i)=>{const[w,h,d,x,y,z,color,rx=0,ry=0,rz=0]=b;qq.setFromEuler(eu.set(rx,ry,rz));m.compose(v.set(x,y,z),qq,sc.set(w,h,d));nm.getNormalMatrix(m);cc.setHex(color);
+    for(let j=0;j<n;j++){const o=(i*n+j)*3;v.fromBufferAttribute(bp,j).applyMatrix4(m);pos[o]=v.x;pos[o+1]=v.y;pos[o+2]=v.z;
+      v.fromBufferAttribute(bn,j).applyMatrix3(nm).normalize();nor[o]=v.x;nor[o+1]=v.y;nor[o+2]=v.z;col[o]=cc.r;col[o+1]=cc.g;col[o+2]=cc.b;}});
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('normal',new T.BufferAttribute(nor,3));g.setAttribute('color',new T.BufferAttribute(col,3));return g;}
+const vmat=new T.MeshLambertMaterial({vertexColors:true});
+const enemyGeo=mergeBoxes([[0.95,0.95,0.95,0,0.475,0,0xff4d4d],
+  [0.24,0.24,0.05,-0.2,0.6,0.49,0xffffff],[0.24,0.24,0.05,0.2,0.6,0.49,0xffffff],
+  [0.12,0.12,0.06,-0.2,0.58,0.5,0x111111],[0.12,0.12,0.06,0.2,0.58,0.5,0x111111],
+  [0.3,0.07,0.06,-0.2,0.78,0.5,0x111111,0,0,-0.4],[0.3,0.07,0.06,0.2,0.78,0.5,0x111111,0,0,0.4]]);
+enemies.forEach(e=>{const g=new T.Mesh(enemyGeo,vmat);e.mesh=g;e.bump=0;scene.add(g);});
+// ---------- vehicle models (blocky, one merged mesh each) ----------
+const BLK=0x1b1b1f,SIL=0xc9d1db,TINT=0x1f2a38,WHITE=0xf4f5f2,TIRE=0x18181a;
+function wheel(x,z,r,w,rim){return[[w,r*2,r*2,x,r,z,TIRE],[w+0.02,r*1.0,r*1.0,x,r,z,rim]];}
+const MODELS={
+ car:()=>[ // white luxury SUV, floating black roof
+  [1.5,0.62,2.5,0,0.74,0,WHITE],[1.46,0.12,2.44,0,0.4,0,0x2a2a2e],            // body + dark lower cladding
+  [1.36,0.5,1.55,0,1.3,-0.12,TINT],                                             // tinted glasshouse
+  [1.44,0.09,1.62,0,1.6,-0.16,BLK],[1.4,0.09,0.42,0,1.53,-1.02,BLK,0.38,0,0],   // flat black roof, slight slope at back
+  [0.07,0.5,0.08,0.69,1.3,0.63,BLK],[0.07,0.5,0.08,-0.69,1.3,0.63,BLK],         // A pillars
+  [0.07,0.5,0.1,0.69,1.3,-0.9,BLK],[0.07,0.5,0.1,-0.69,1.3,-0.9,BLK],           // D pillars
+  [0.07,0.5,0.06,0.69,1.3,-0.12,BLK],[0.07,0.5,0.06,-0.69,1.3,-0.12,BLK],       // B pillars
+  [0.03,0.06,2.3,0.765,0.88,0,SIL],[0.03,0.06,2.3,-0.765,0.88,0,SIL],           // silver side trim
+  [1.0,0.24,0.05,0,0.82,1.26,BLK],[0.16,0.07,0.04,0,0.84,1.29,SIL],             // black grille + small silver badge block
+  [0.4,0.07,0.04,0.52,0.98,1.255,0xf2fbff],[0.4,0.07,0.04,-0.52,0.98,1.255,0xf2fbff], // slim LED headlights
+  [0.34,0.08,0.04,0.55,0.95,-1.255,0xe03131],[0.34,0.08,0.04,-0.55,0.95,-1.255,0xe03131], // tail lights
+  [1.3,0.1,0.06,0,0.5,1.27,SIL],[0.12,0.09,0.12,0.45,0.36,-1.28,SIL],           // bumper trim, exhaust tip
+  [0.1,0.08,0.18,0.8,1.1,0.6,WHITE],[0.1,0.08,0.18,-0.8,1.1,0.6,WHITE],         // mirrors
+  ...wheel(0.68,0.82,0.37,0.32,SIL),...wheel(-0.68,0.82,0.37,0.32,SIL),...wheel(0.68,-0.82,0.37,0.32,SIL),...wheel(-0.68,-0.82,0.37,0.32,SIL)],
+ bike:()=>[...wheel(0,0.52,0.31,0.08,0xdddddd),...wheel(0,-0.52,0.31,0.08,0xdddddd),
+  [0.07,0.07,0.85,0,0.62,0,0x12b886],[0.07,0.5,0.07,0,0.55,-0.25,0x12b886,0.3,0,0],[0.07,0.5,0.07,0,0.55,0.35,0x12b886,-0.3,0,0],
+  [0.2,0.07,0.28,0,0.86,-0.27,BLK],[0.55,0.06,0.06,0,0.98,0.42,BLK],[0.06,0.3,0.06,0,0.84,0.42,0x12b886],
+  [0.42,0.24,0.34,0,0.84,0.66,0xc8945a],[0.36,0.04,0.28,0,0.75,0.66,0x8b5a2b]], // wicker basket for the puppy
+ moto:()=>[...wheel(0,0.66,0.32,0.16,SIL),...wheel(0,-0.66,0.32,0.16,SIL),
+  [0.36,0.3,1.0,0,0.56,0,BLK],[0.4,0.25,0.5,0,0.82,0.2,BLK],[0.42,0.06,0.3,0,0.95,0.2,0xf08c00],
+  [0.44,0.26,0.32,0,0.44,0.05,SIL],[0.34,0.09,0.5,0,0.8,-0.27,0x5c3a21],[0.3,0.09,0.32,0,0.84,-0.62,0x5c3a21],
+  [0.08,0.4,0.08,0.18,0.9,0.52,SIL,-0.3,0,0],[0.08,0.4,0.08,-0.18,0.9,0.52,SIL,-0.3,0,0],[0.8,0.06,0.06,0,1.1,0.6,SIL],
+  [0.2,0.2,0.08,0,0.8,0.72,0xfff3bf],[0.08,0.08,0.9,0.25,0.34,-0.35,SIL],[0.08,0.08,0.9,-0.25,0.34,-0.35,SIL]],
+ row:()=>[[1.0,0.14,2.0,0,0.07,0,0x9c6b3c],[0.12,0.42,2.3,0.55,0.25,0,0xb07d48],[0.12,0.42,2.3,-0.55,0.25,0,0xb07d48],
+  [1.1,0.42,0.12,0,0.25,1.1,0xb07d48],[1.1,0.42,0.12,0,0.25,-1.1,0xb07d48],[1.0,0.07,0.3,0,0.36,-0.15,0x7a4f2a],[1.0,0.07,0.3,0,0.36,0.7,0x7a4f2a],
+  [0.06,0.06,1.4,0.85,0.45,-0.1,0xe9c46a,0,0.9,0],[0.06,0.06,1.4,-0.85,0.45,-0.1,0xe9c46a,0,-0.9,0]],
+ speed:()=>[[1.4,0.5,2.6,0,0.25,-0.1,WHITE],[1.0,0.5,0.4,0,0.25,1.4,WHITE],[0.5,0.48,0.32,0,0.26,1.75,WHITE],
+  [1.42,0.1,2.62,0,0.32,-0.1,0x1c3d6e],[1.24,0.05,1.2,0,0.52,-0.65,0xc8945a],[1.2,0.3,0.06,0,0.68,0.42,TINT,-0.3,0,0],
+  [0.5,0.3,0.4,0.3,0.62,-0.1,0xf1e3c6],[0.5,0.3,0.4,-0.3,0.62,-0.1,0xf1e3c6],[0.04,0.06,1.6,0.68,0.58,0.4,SIL],[0.04,0.06,1.6,-0.68,0.58,0.4,SIL],
+  [0.3,0.25,0.2,0,0.25,-1.45,0x333333]],
+ jet:()=>[[0.7,0.32,1.5,0,0.16,0,0xffd43b],[0.5,0.3,0.35,0,0.16,0.88,0xffd43b],[0.72,0.08,1.52,0,0.3,0,0x1971c2],
+  [0.4,0.16,0.8,0,0.46,-0.2,WHITE],[0.3,0.25,0.25,0,0.5,0.4,0x1971c2],[0.62,0.06,0.06,0,0.68,0.42,BLK]]};
+// seats: alena local pos, pose, visible; dog local pos
+const SEAT={car:{a:[0.33,0.42,0.1],pose:'sit',hide:true,dog:[-0.35,0.6,-0.3],dogHide:true},
+  bike:{a:[0,0.24,-0.27],pose:'ride',dog:[0,0.78,0.62]},moto:{a:[0,0.18,-0.25],pose:'ride',dog:[0,0.88,-0.65]},
+  row:{a:[0,0.28,-0.15],pose:'sit',dog:[0,0.4,0.7]},speed:{a:[0.3,0.38,-0.1],pose:'sit',dog:[-0.3,0.78,-0.15]},
+  jet:{a:[0,0.0,-0.2],pose:'ride',dog:[0,0.54,-0.6]}};
+const geoCache={};
+vehicles.forEach(v=>{const g=new T.Group(),inner=new T.Group();g.add(inner);
+  inner.add(new T.Mesh(geoCache[v.type]||(geoCache[v.type]=mergeBoxes(MODELS[v.type]())),vmat));
+  v.group=g;v.inner=inner;scene.add(g);});
+function resetVehicle(v){v.x=v.home.x;v.z=v.home.z;v.yaw=v.home.yaw;v.speed=0;v.roll=0;v.y=v.t.water?WATER-v.t.sink:surfaceAt(v.x,v.z,H-1);}
+vehicles.forEach(resetVehicle);
+// ---------- smoke puffs (instanced, small pool) ----------
+const SMOKE_N=28;
+const smokeMesh=new T.InstancedMesh(box,new T.MeshLambertMaterial({transparent:true,opacity:0.75,depthWrite:false}),SMOKE_N);
+smokeMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
+const smoke=[];for(let i=0;i<SMOKE_N;i++){smoke.push({life:0,x:0,y:0,z:0,vx:0,vy:0,vz:0,rot:0});smokeMesh.setColorAt(i,new T.Color(0x9a9a9a));}
+smokeMesh.frustumCulled=false;scene.add(smokeMesh);
+let smokeAcc=0,smokeSpawned=0;
+function puff(x,y,z,vx,vz){const p=smoke.find(s=>s.life<=0);if(!p)return;p.life=1;p.x=x;p.y=y;p.z=z;p.vx=vx*0.3+(Math.random()-0.5)*0.4;p.vz=vz*0.3+(Math.random()-0.5)*0.4;p.vy=0.9+Math.random()*0.5;p.rot=Math.random()*3;smokeSpawned++;}
+// ---------- Biscuit the Yorkie puppy ----------
+const TAN=0xd9a55b,STEEL=0x5f7891,DKTAN=0xb98544;
+const dog={x:0,y:0,z:0,face:0,walk:0,stuck:0,hop:0,sit:0,yipT:8,riding:false};
+const dogG=new T.Group(),dogBody=new T.Group();dogG.add(dogBody);
+dogBody.add(new T.Mesh(mergeBoxes([
+  [0.26,0.2,0.42,0,0.3,0,STEEL],[0.27,0.07,0.43,0,0.21,0,DKTAN],          // steel-blue back, tan underside
+  [0.24,0.22,0.22,0,0.46,0.26,TAN],[0.13,0.1,0.11,0,0.42,0.4,TAN],         // tan head + snout
+  [0.05,0.045,0.03,0,0.44,0.46,0x111111],                                  // nose
+  [0.04,0.045,0.02,-0.065,0.5,0.375,0x111111],[0.04,0.045,0.02,0.065,0.5,0.375,0x111111], // eyes
+  [0.06,0.12,0.04,-0.08,0.62,0.24,TAN,0,0,0.15],[0.06,0.12,0.04,0.08,0.62,0.24,TAN,0,0,-0.15], // pointy upright ears
+  [0.04,0.06,0.03,-0.08,0.69,0.24,DKTAN],[0.04,0.06,0.03,0.08,0.69,0.24,DKTAN],
+  [0.16,0.06,0.06,0,0.6,0.3,0xff4f9a],[0.05,0.05,0.07,0,0.6,0.3,0xd6336c], // pink bow
+  [0.26,0.06,0.2,0,0.33,0.16,TAN]]),vmat));
+const dogLegs=[];for(const[x,z]of[[-0.08,0.13],[0.08,0.13],[-0.08,-0.13],[0.08,-0.13]]){const p=new T.Group();p.position.set(x,0.2,z);
+  const m=new T.Mesh(box,new T.MeshLambertMaterial({color:TAN}));m.scale.set(0.07,0.2,0.07);m.position.y=-0.1;p.add(m);dogBody.add(p);dogLegs.push(p);}
+const dogTail=new T.Group();dogTail.position.set(0,0.37,-0.2);{const m=new T.Mesh(box,new T.MeshLambertMaterial({color:STEEL}));m.scale.set(0.05,0.17,0.05);m.position.y=0.08;dogTail.add(m);}
+dogTail.rotation.x=-0.5;dogBody.add(dogTail);
+scene.add(dogG);
+
 // ---------- Alena ----------
 const alena=new T.Group();const parts={};
 {const mk=(col,w,h,d,x,y,z,parent)=>{const m=new T.Mesh(box,new T.MeshLambertMaterial({color:col}));m.scale.set(w,h,d);m.position.set(x,y,z);(parent||alena).add(m);return m;};
@@ -321,13 +475,40 @@ function beep(f1,f2,dur,type,vol){if(muted)return;try{if(!actx)actx=new (window.
 const sfx={jump:()=>beep(320,640,0.14,'square',0.06),gem:()=>{beep(880,1320,0.08,'square',0.06);setTimeout(()=>beep(1320,1760,0.1,'square',0.06),70);},
   hit:()=>beep(300,70,0.3,'sawtooth',0.09),stomp:()=>beep(500,200,0.12,'triangle',0.1),win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,f*1.01,0.18,'square',0.07),i*130));},
   lose:()=>{[392,330,262].forEach((f,i)=>setTimeout(()=>beep(f,f*0.98,0.25,'triangle',0.09),i*200));},portal:()=>beep(400,1600,0.5,'sine',0.08)};
+const audioErrs=[];
+function ensureCtx(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx;}catch(e){audioErrs.push(String(e));return null;}}
+// continuous engine hum per vehicle (created on boarding = after a user gesture)
+const ENG={car:{type:'sawtooth',f0:42,f1:150,vol:0.06,cut:520,sub:true},moto:{type:'square',f0:55,f1:210,vol:0.03,cut:900,lfo:22},
+  speed:{type:'sawtooth',f0:70,f1:230,vol:0.03,cut:700},row:null,jet:{type:'triangle',f0:120,f1:420,vol:0.035,cut:1600,lfo:9},bike:null};
+let engine=null;
+function engineStart(type){engineStop();const cfg=ENG[type];if(!cfg)return;const ac=ensureCtx();if(!ac)return;
+  try{const o=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();o.type=cfg.type;o.frequency.value=cfg.f0;f.type='lowpass';f.frequency.value=cfg.cut;g.gain.value=0;
+    o.connect(f);f.connect(g);g.connect(ac.destination);const nodes=[o];
+    if(cfg.sub){const o2=ac.createOscillator();o2.type='square';o2.frequency.value=cfg.f0/2;const g2=ac.createGain();g2.gain.value=0.5;o2.connect(g2).connect(f);nodes.push(o2);engine={o2};}
+    if(cfg.lfo){const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=cfg.lfo;lg.gain.value=cfg.f0*0.15;l.connect(lg).connect(o.frequency);nodes.push(l);}
+    nodes.forEach(n=>n.start());engine=Object.assign(engine||{},{o,f,g,nodes,cfg});}catch(e){audioErrs.push(String(e));engine=null;}}
+function engineStop(){if(!engine)return;try{const t=actx.currentTime;engine.g.gain.setTargetAtTime(0,t,0.05);engine.nodes.forEach(n=>n.stop(t+0.3));}catch(e){audioErrs.push(String(e));}engine=null;}
+function engineUpdate(speedFrac,accel){if(!engine||!actx)return;const c=engine.cfg,t=actx.currentTime;
+  const f=c.f0+(c.f1-c.f0)*Math.min(1,speedFrac)+(accel?c.f0*0.25:0);
+  engine.o.frequency.setTargetAtTime(f,t,0.06);if(engine.o2)engine.o2.frequency.setTargetAtTime(f/2,t,0.06);
+  engine.g.gain.setTargetAtTime(muted||state!=='play'?0:c.vol*(0.45+0.55*Math.min(1,speedFrac)),t,0.08);}
+function bell(){[0,0.18].forEach(d=>setTimeout(()=>{beep(2100,2000,0.35,'sine',0.06);beep(3150,3100,0.25,'sine',0.02);},d*1000));}
+const HORN={car:()=>{[0,0.22].forEach(d=>setTimeout(()=>{beep(415,410,0.16,'square',0.05);beep(520,515,0.16,'square',0.04);},d*1000));},
+  moto:()=>{[0,0.18].forEach(d=>setTimeout(()=>beep(620,610,0.12,'square',0.04),d*1000));},
+  bike:bell,row:()=>beep(330,320,0.4,'triangle',0.06),
+  speed:()=>{beep(220,218,0.55,'sawtooth',0.04);beep(277,275,0.55,'sawtooth',0.03);},
+  jet:()=>{[0,0.15].forEach(d=>setTimeout(()=>beep(880,860,0.1,'square',0.035),d*1000));}};
+const STARTUP={car:()=>{beep(60,160,0.5,'sawtooth',0.07);setTimeout(()=>beep(120,90,0.35,'sawtooth',0.05),450);},
+  moto:()=>{beep(70,240,0.35,'square',0.05);setTimeout(()=>beep(200,120,0.3,'square',0.04),330);},bike:()=>bell(),
+  row:()=>beep(500,700,0.12,'triangle',0.05),speed:()=>beep(80,260,0.6,'sawtooth',0.05),jet:()=>beep(150,520,0.45,'triangle',0.06)};
+sfx.yip=()=>{beep(1300,1700,0.06,'square',0.025);setTimeout(()=>beep(1400,1900,0.07,'square',0.025),110);};
 const muteBtn=document.getElementById('mute');
 function toggleMute(){muted=!muted;muteBtn.innerHTML=muted?'&#215;':'&#9834;';muteBtn.style.opacity=muted?0.6:1;}
 muteBtn.addEventListener('click',e=>{e.stopPropagation();toggleMute();});
 muteBtn.addEventListener('pointerdown',e=>e.stopPropagation());
 // ---------- Player physics ----------
 const PR=0.28,PH=1.55,GRAV=26,JUMPV=10.6,SPEED=6;
-const P={x:0,y:0,z:0,vx:0,vy:0,vz:0,onGround:false,face:0,inv:0,safe:null,walk:0,coyote:0,jumpBuf:0};
+const P={x:0,y:0,z:0,vx:0,vy:0,vz:0,onGround:false,face:0,inv:0,safe:null,walk:0,coyote:0,jumpBuf:0,ride:null};
 function collides(px,py,pz){
   const x0=Math.floor(px-PR),x1=Math.floor(px+PR-1e-4),y0=Math.floor(py),y1=Math.floor(py+PH-1e-4),z0=Math.floor(pz-PR),z1=Math.floor(pz+PR-1e-4);
   for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++)if(get(x,y,z))return true;return false;}
@@ -340,7 +521,7 @@ const keys={};let camYaw=0,camYawTarget=0;
 const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 if(isTouch)document.body.classList.add('touch');
 window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(k===' '||k==='arrowup'||k==='arrowdown'||k==='arrowleft'||k==='arrowright')e.preventDefault();
-  if(k===' '||k==='w'&&false){}if(k===' ')P.jumpBuf=0.15;if(k==='m')toggleMute();
+  if(k===' '||k==='w'&&false){}if(k===' ')P.jumpBuf=0.15;if(k==='m')toggleMute();if(k==='e'&&!e.repeat)toggleRide();if(k==='h'&&!e.repeat)honk();
   if((k==='enter'||k===' ')&&state!=='play'){const s=document.querySelector('.screen.on .btn');if(s&&k==='enter')s.click();}});
 window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
@@ -376,16 +557,109 @@ function say(t,d){hud.msg.textContent=t;hud.msg.style.opacity=1;msgT=d||2;}
 function updateHud(){hud.gem.textContent=got+'/'+gems.length;hud.hearts.innerHTML='&#9829;'.repeat(lives)+'<span style="opacity:.3">'+'&#9829;'.repeat(3-lives)+'</span>';hud.timer.textContent=fmt(time);}
 function placeSpawn(){P.x=spawn.x+0.5;P.z=spawn.z+0.5;P.y=H_(spawn.x,spawn.z)+0.01;P.vx=P.vy=P.vz=0;P.safe={x:P.x,y:P.y,z:P.z};
   P.face=Math.atan2(portal.x-spawn.x,portal.z-spawn.z);camYaw=camYawTarget=P.face+Math.PI;}
-function reset(){lives=3;got=0;time=0;gems.forEach(g=>g.got=false);enemies.forEach(e=>e.dizzy=0);placeSpawn();P.inv=0;updateHud();}
+function reset(){if(P.ride)exitRide(true);vehicles.forEach(resetVehicle);smoke.forEach(s=>s.life=0);lives=3;got=0;time=0;gems.forEach(g=>g.got=false);enemies.forEach(e=>e.dizzy=0);placeSpawn();P.inv=0;dog.x=P.x-Math.sin(P.face)*1.3;dog.z=P.z-Math.cos(P.face)*1.3;dog.y=dog.yT=surfaceAt(dog.x,dog.z,P.y+1);dog.stuck=0;dog.hop=0;updateHud();}
 function startGame(){reset();camera.position.set(P.x+Math.sin(camYaw)*8.5,P.y+4.6,P.z+Math.cos(camYaw)*8.5);state='play';for(const k in scr)scr[k].classList.remove('on');say('Help Alena find '+gems.length+' gems!',2.5);
-  if(!muted){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();actx.resume();}catch(e){}}}
+  if(!muted)ensureCtx();updateRideUI();}
 document.getElementById('playBtn').onclick=startGame;document.getElementById('againBtn').onclick=startGame;document.getElementById('retryBtn').onclick=startGame;
 function hurt(fx,fz,water){if(P.inv>0||state!=='play')return;lives--;sfx.hit();updateHud();
-  if(lives<=0){state='lose';sfx.lose();document.getElementById('loseStats').textContent='Alena found '+got+' of '+gems.length+' gems in '+fmt(time)+'.';scr.lose.classList.add('on');return;}
+  if(lives<=0){state='lose';engineStop();sfx.lose();document.getElementById('loseStats').textContent='Alena found '+got+' of '+gems.length+' gems in '+fmt(time)+'.';scr.lose.classList.add('on');return;}
   P.inv=1.6;
   if(water){P.x=P.safe.x;P.y=P.safe.y+0.01;P.z=P.safe.z;P.vx=P.vy=P.vz=0;say('Splash! Alena swam back.',1.6);}
   else{let dx=P.x-fx,dz=P.z-fz;const l=Math.hypot(dx,dz)||1;P.vx=dx/l*9;P.vz=dz/l*9;P.vy=8;P.onGround=false;say('Ouch!',1);}}
-function win(){state='win';sfx.win();document.getElementById('winStats').textContent='Time: '+fmt(time)+'   Hearts left: '+lives;scr.win.classList.add('on');}
+function win(){state='win';engineStop();sfx.win();document.getElementById('winStats').textContent='Time: '+fmt(time)+'   Hearts left: '+lives;scr.win.classList.add('on');}
+// ---------- Riding ----------
+const rideBtn=document.getElementById('rideBtn'),honkBtn=document.getElementById('honkBtn'),promptEl=document.getElementById('prompt'),vehLabel=document.getElementById('vehLabel');
+let nearV=null;
+function poseFor(pose){const L=[parts.legL,parts.legR],A=[parts.armL,parts.armR];
+  if(pose==='sit'){L.forEach((l,i)=>{l.rotation.set(-1.45,0,(i?1:-1)*0.05);});}
+  else{L.forEach((l,i)=>{l.rotation.set(-0.55,0,(i?-1:1)*0.28);});}
+  A.forEach((a,i)=>{a.rotation.set(-1.15,0,(i?-1:1)*0.12);});}
+function board(v){if(P.ride||state!=='play')return;P.ride=v;v.speed=0;const S=SEAT[v.type];
+  v.inner.add(alena);alena.position.set(...S.a);alena.rotation.set(0,0,0);alena.visible=!S.hide;poseFor(S.pose);
+  v.inner.add(dogG);dogG.position.set(...S.dog);dogG.rotation.set(0,0,0);dogG.visible=!S.dogHide;dog.riding=true;dogBody.rotation.x=0;
+  ensureCtx();STARTUP[v.type]();engineStart(v.type);shadow.visible=false;
+  say('Alena hops on the '+v.t.name+'!',1.6);updateRideUI();}
+function nearestLand(x,z){let bestP=null,bd=1e9;
+  for(let Z=Math.max(0,Math.floor(z)-18);Z<=Math.min(N-1,Math.floor(z)+18);Z++)for(let X=Math.max(0,Math.floor(x)-18);X<=Math.min(N-1,Math.floor(x)+18);X++){
+    const h=hgt[Z*N+X];if(h<2||!reach[Z*N+X])continue;if(collides(X+0.5,h,Z+0.5))continue;
+    const d=Math.hypot(X+0.5-x,Z+0.5-z);if(d<bd){bd=d;bestP={x:X+0.5,y:h,z:Z+0.5};}}
+  return bestP;}
+function exitRide(silent){const v=P.ride;if(!v)return;P.ride=null;engineStop();
+  let spot=null;
+  if(!v.t.water){const s=Math.sin(v.yaw),c2=Math.cos(v.yaw),rx=-c2,rz=s; // right-hand side of the vehicle
+    for(const[a,b]of[[v.t.hw+0.55,0],[-(v.t.hw+0.55),0],[0,-(v.t.hl+0.55)],[0,v.t.hl+0.55]]){
+      const px=v.x+rx*a+s*b,pz=v.z+rz*a+c2*b,sf=surfaceAt(px,pz,v.y+1.5);
+      if(sf>=2&&Math.abs(sf-v.y)<=1.6&&!collides(px,sf,pz)){spot={x:px,y:sf,z:pz};break;}}}
+  if(!spot)spot=nearestLand(v.x,v.z)||P.safe;
+  scene.add(alena);alena.rotation.set(0,0,0);[parts.legL,parts.legR,parts.armL,parts.armR].forEach(p=>p.rotation.set(0,0,0));alena.visible=true;
+  P.x=spot.x;P.y=spot.y+0.01;P.z=spot.z;P.vx=P.vy=P.vz=0;P.onGround=true;P.face=v.yaw;P.safe={x:P.x,y:P.y,z:P.z};
+  scene.add(dogG);dogG.visible=true;dog.riding=false;dogG.rotation.set(0,v.yaw,0);
+  const ds=nearestDogSpot(P.x-Math.sin(v.yaw)*1.2,P.z-Math.cos(v.yaw)*1.2)||{x:P.x,y:P.y,z:P.z};dog.x=ds.x;dog.y=ds.y;dog.z=ds.z;
+  v.speed=0;shadow.visible=true;
+  if(!silent)say(v.t.water?'Back on dry land!':'Alena hops off.',1.2);updateRideUI();}
+function nearestDogSpot(x,z){const sf=surfaceAt(x,z,P.y+1.5);if(sf>=2&&Math.abs(sf-P.y)<=1.1&&!get(Math.floor(x),Math.floor(sf),Math.floor(z)))return{x,y:sf,z};return null;}
+function toggleRide(){if(state!=='play')return;if(P.ride)exitRide();else if(nearV)board(nearV);}
+function honk(){if(P.ride){ensureCtx();HORN[P.ride.type]();}}
+function updateRideUI(){
+  const show=state==='play'&&(P.ride||nearV);
+  rideBtn.style.display=show?'flex':'none';rideBtn.textContent=P.ride?'EXIT':'RIDE';
+  honkBtn.style.display=state==='play'&&P.ride?'flex':'none';honkBtn.textContent=P.ride&&P.ride.type==='bike'?'DING':'HONK';
+  vehLabel.style.display=state==='play'&&P.ride?'block':'none';if(P.ride)vehLabel.textContent=P.ride.t.name;
+  if(state==='play'&&(P.ride||nearV)){promptEl.style.display='block';
+    promptEl.innerHTML=isTouch?(P.ride?'Tap <b>EXIT</b> to hop off':'Tap <b>RIDE</b> to hop on the '+nearV.t.name)
+      :(P.ride?'<b>E</b> to get off &nbsp;&middot;&nbsp; <b>H</b> to '+(P.ride.type==='bike'?'ring the bell':'honk'):'Press <b>E</b> to ride the '+nearV.t.name);}
+  else promptEl.style.display='none';}
+rideBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleRide();});
+honkBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();honk();});
+function driveVehicle(v,ix,iy,dt){const t=v.t;
+  const accel=iy>0.1;
+  if(iy>0.1)v.speed+=t.acc*iy*dt;
+  else if(iy<-0.1){v.speed-=(v.speed>0.2?t.acc*1.8:t.acc*0.6)*(-iy)*dt;}
+  else{const dr=(t.water?1.6:3.2)*dt;v.speed=Math.abs(v.speed)<dr?0:v.speed-Math.sign(v.speed)*dr;}
+  v.speed=Math.max(-t.max*0.35,Math.min(t.max,v.speed));
+  let tf=t.water?Math.max(0.35,Math.min(1,Math.abs(v.speed)/2)):Math.min(1,Math.abs(v.speed)/2.5);
+  if(v.type==='car')tf*=1-0.3*Math.abs(v.speed)/t.max;     // steady at speed
+  const dir=v.speed<-0.05?-1:1;
+  const nyaw=v.yaw-ix*t.turn*tf*dir*dt;
+  const nx=v.x+Math.sin(nyaw)*v.speed*dt,nz=v.z+Math.cos(nyaw)*v.speed*dt;
+  let top=footOK(t,nx,nz,nyaw,v.y);
+  if(top!==null){v.x=nx;v.z=nz;v.yaw=nyaw;}
+  else{let ok=false;
+    for(const[ax,az]of[[nx,v.z],[v.x,nz]]){const tp=footOK(t,ax,az,v.yaw,v.y);if(tp!==null){v.x=ax;v.z=az;v.speed*=0.97;top=tp;ok=true;break;}}
+    if(!ok){if(Math.abs(v.speed)>3)beep(140,60,0.12,'triangle',0.05);v.speed=-v.speed*0.25;top=footOK(t,v.x,v.z,v.yaw,v.y);
+      const ty=footOK(t,v.x,v.z,nyaw,v.y);if(ty!==null){v.yaw=nyaw;top=ty;}}}
+  if(t.water)v.y=WATER-t.sink+Math.sin(anim*2.2+v.x)*0.04;
+  else if(top!==null)v.y+=(top-v.y)*Math.min(1,(top>v.y?14:9)*dt);
+  // lean / pitch
+  const sf=Math.min(1,Math.abs(v.speed)/t.max);
+  const rollT=v.type==='moto'?ix*0.42*Math.min(1,Math.abs(v.speed)/5):v.type==='bike'?ix*0.22*sf:v.type==='jet'?ix*0.3*sf:v.type==='car'?-ix*0.04*sf:ix*0.08*sf;
+  v.roll+=(rollT-v.roll)*Math.min(1,6*dt);
+  v.inner.rotation.z=v.roll;v.inner.rotation.x=t.water?-0.12*sf+Math.sin(anim*3+v.z)*0.02:0;
+  return{accel,sf};}
+let lastRideKey='';
+function updateDog(dt){
+  if(dog.riding){dogTail.rotation.z=Math.sin(anim*16)*0.6;dogBody.rotation.x=0;dogBody.position.y=0;dogLegs.forEach(l=>l.rotation.x=0);return;}
+  const tx=P.x-Math.sin(P.face)*1.4,tz=P.z-Math.cos(P.face)*1.4;
+  const dx=tx-dog.x,dz=tz-dog.z,dist=Math.hypot(dx,dz),dAl=Math.hypot(P.x-dog.x,P.z-dog.z);
+  const alenaOK=P.onGround&&P.y>=2;let moving=false;
+  if((dAl>14||dog.stuck>1.4||Math.abs(P.y-dog.y)>4)&&alenaOK){const sp=nearestDogSpot(tx,tz)||{x:P.x,y:P.y,z:P.z};dog.x=sp.x;dog.y=dog.yT=sp.y;dog.z=sp.z;dog.stuck=0;dog.hop=0.25;}
+  else if(dist>0.35&&dAl>1.1){
+    const sp=Math.min(7.4,dist*3.2+1),st=Math.min(dist,sp*dt),nx=dog.x+dx/dist*st,nz=dog.z+dz/dist*st;
+    const sf=surfaceAt(nx,nz,dog.y+1.3);
+    if(sf>=2&&sf-dog.y<=1.05&&!get(Math.floor(nx),Math.floor(sf),Math.floor(nz))){dog.x=nx;dog.z=nz;if(sf>dog.yT+0.5&&dog.hop<=0)dog.hop=0.25;dog.yT=sf;dog.stuck=0;moving=true;
+      let df=Math.atan2(dx,dz)-dog.face;df=Math.atan2(Math.sin(df),Math.cos(df));dog.face+=df*Math.min(1,10*dt);}
+    else if(sf>=2)dog.stuck+=dt;   // blocked by a wall: hop/teleport soon. Water: just wait on the shore.
+  }
+  if(!moving&&dAl<3){let df=Math.atan2(P.x-dog.x,P.z-dog.z)-dog.face;df=Math.atan2(Math.sin(df),Math.cos(df));dog.face+=df*Math.min(1,4*dt);}
+  dog.y+=(dog.yT-dog.y)*Math.min(1,12*dt);
+  if(dog.hop>0)dog.hop-=dt;
+  dogBody.position.y=dog.hop>0?Math.sin(dog.hop/0.25*Math.PI)*0.35:0;
+  if(moving){dog.walk+=dt*16;dog.sit=Math.max(0,dog.sit-dt*5);dogLegs.forEach((l,i)=>l.rotation.x=Math.sin(dog.walk+(i%2?Math.PI:0)+(i>1?Math.PI:0))*0.7);dogTail.rotation.z=Math.sin(anim*10)*0.35;}
+  else{dog.sit=Math.min(1,dog.sit+dt*4);dogLegs.forEach((l,i)=>l.rotation.x=i>1?-1.2*dog.sit:0);dogTail.rotation.z=Math.sin(anim*18)*0.7;}
+  dogBody.rotation.x=-0.45*dog.sit;dogBody.position.y+=-0.06*dog.sit;
+  dogG.position.set(dog.x,dog.y,dog.z);dogG.rotation.y=dog.face;
+  dog.yipT-=dt;if(dog.yipT<=0){dog.yipT=12+Math.random()*16;if(state==='play')sfx.yip();}
+}
 // ---------- Update ----------
 let anim=0;const m4=new T.Matrix4(),q=new T.Quaternion(),v3=new T.Vector3(),one=new T.Vector3(1,1,1);
 function step(dt){
@@ -394,10 +668,16 @@ function step(dt){
   let ix=0,iy=0;
   if(keys.a||keys.arrowleft)ix-=1;if(keys.d||keys.arrowright)ix+=1;if(keys.w||keys.arrowup)iy+=1;if(keys.s||keys.arrowdown)iy-=1;
   if(stick.id!==null){ix+=stick.x;iy-=stick.y;}
-  if(keys.q)camYawTarget+=dt*2.2;if(keys.e)camYawTarget-=dt*2.2;
+  if(keys.q)camYawTarget+=dt*2.2;if(keys.r)camYawTarget-=dt*2.2;
   const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il;}
   const playing=state==='play';
   if(!playing){ix=iy=0;}
+  if(P.ride){const v=P.ride;const ri=driveVehicle(v,ix,iy,dt);P.x=v.x;P.z=v.z;P.y=v.y;P.vx=P.vy=P.vz=0;P.onGround=true;P.face=v.yaw;camYawTarget=v.yaw+Math.PI;
+    engineUpdate(Math.abs(v.speed)/v.t.max,ri.accel);
+    if(v.type==='car'&&playing){smokeAcc+=dt*(1.6+(ri.accel?9:0)+Math.abs(v.speed)*0.3);
+      while(smokeAcc>=1){smokeAcc-=1;const sn=Math.sin(v.yaw),cs=Math.cos(v.yaw);puff(v.x+0.45*cs-1.36*sn,v.y+0.38,v.z-0.45*sn-1.36*cs,-sn*Math.max(0,v.speed)*0.5-sn*1.2,-cs*Math.max(0,v.speed)*0.5-cs*1.2);}}
+    P.jumpBuf=0;
+  }else{
   const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=Math.cos(camYaw),rz=-Math.sin(camYaw);
   const wx=(fx*iy+rx*ix)*SPEED,wz=(fz*iy+rz*ix)*SPEED;
   const acc=P.onGround?14:6;
@@ -414,14 +694,16 @@ function step(dt){
   if(collides(P.x,P.y,P.z)){if(P.vy<0){P.y=Math.floor(P.y)+1;P.onGround=true;}else{P.y=Math.floor(P.y+PH)-PH-1e-3;}P.vy=0;}
   else if(wasGround&&P.vy<=0&&collides(P.x,P.y-0.08,P.z)){P.y=Math.ceil(P.y-0.08);P.onGround=true;P.vy=0;}
   if(P.onGround&&P.inv<1.2&&P.y>=2){if(!spikes.some(s=>Math.hypot(s.x-P.x,s.z-P.z)<2.2)&&!enemies.some(e=>Math.hypot(e.x-P.x,e.z-P.z)<2.5))P.safe={x:P.x,y:P.y,z:P.z};}
+  }
   if(P.inv>0)P.inv-=dt;
   if(playing){
     time+=dt;
-    if(P.y<WATER-0.3)hurt(0,0,true);
+    if(!P.ride&&P.y<WATER-0.3)hurt(0,0,true);
     // spikes
-    for(const s of spikes)if(Math.abs(s.x-P.x)<0.62&&Math.abs(s.z-P.z)<0.62&&P.y<s.y+0.5)hurt(s.x,s.z);
+    if(!P.ride)for(const s of spikes)if(Math.abs(s.x-P.x)<0.62&&Math.abs(s.z-P.z)<0.62&&P.y<s.y+0.5)hurt(s.x,s.z);
     // gems
-    for(const g of gems)if(!g.got&&Math.abs(g.x-P.x)<0.75&&Math.abs(g.z-P.z)<0.75&&g.y>P.y-0.4&&g.y<P.y+PH+0.5){g.got=true;got++;sfx.gem();updateHud();
+    const gr=P.ride?Math.max(0.75,P.ride.t.hw+0.45):0.75;
+    for(const g of gems)if(!g.got&&Math.abs(g.x-P.x)<gr&&Math.abs(g.z-P.z)<gr&&g.y>P.y-0.4&&g.y<P.y+PH+0.5){g.got=true;got++;sfx.gem();updateHud();
       if(got===gems.length){say('All gems! Run to the portal!',3);sfx.portal();}else say(got+' / '+gems.length,0.8);}
     // portal
     if(got===gems.length&&Math.hypot(portal.x+0.5-P.x,portal.z+0.5-P.z)<1.3&&Math.abs(P.y-portalTop)<1.5)win();
@@ -431,11 +713,13 @@ function step(dt){
     if(e.dizzy>0)e.dizzy-=dt;else{e.t+=dt*0.22*e.dir;if(e.t>1){e.t=1;e.dir=-1;}if(e.t<0){e.t=0;e.dir=1;}}
     e.x=e.ax+(e.bx-e.ax)*e.t;e.z=e.az+(e.bz-e.az)*e.t;
     const gy=groundBelow(e.x,H-1,e.z);e.y+=(gy-e.y)*Math.min(1,10*dt);if(Math.abs(gy-e.y)>3)e.y=gy;
-    const hop=e.dizzy>0?0:Math.abs(Math.sin(anim*7+e.ax))*0.25;
+    if(e.bump>0)e.bump-=dt;
+    const hop=e.bump>0?Math.sin((0.6-e.bump)/0.6*Math.PI)*1.3:e.dizzy>0?0:Math.abs(Math.sin(anim*7+e.ax))*0.25;
     e.mesh.position.set(e.x,e.y+hop,e.z);
     e.mesh.rotation.y=Math.atan2((e.bx-e.ax)*e.dir,(e.bz-e.az)*e.dir);
     e.mesh.scale.set(1,e.dizzy>0?0.45:1,1);if(e.dizzy>0)e.mesh.rotation.y+=anim*6;
-    if(playing&&e.dizzy<=0&&Math.abs(e.x-P.x)<0.75&&Math.abs(e.z-P.z)<0.75&&P.y<e.y+0.95&&P.y+PH>e.y){
+    if(playing&&P.ride&&e.dizzy<=0&&Math.hypot(e.x-P.x,e.z-P.z)<P.ride.t.hl+0.55&&Math.abs(e.y-P.y)<1.6){e.dizzy=3;e.bump=0.6;sfx.stomp();say('Bonk! The Grumble bounced away.',1.1);}
+    else if(playing&&!P.ride&&e.dizzy<=0&&Math.abs(e.x-P.x)<0.75&&Math.abs(e.z-P.z)<0.75&&P.y<e.y+0.95&&P.y+PH>e.y){
       if(P.vy<-1&&P.y>e.y+0.5){e.dizzy=4;P.vy=9;sfx.stomp();say('Boing!',0.8);}else hurt(e.x,e.z);}
   }
   // gems anim
@@ -445,6 +729,7 @@ function step(dt){
   const inner=portalG.userData.inner;
   if(got===gems.length){inner.material.color.setHSL((anim*0.4)%1,0.9,0.65);inner.scale.setScalar(0.92+Math.sin(anim*6)*0.06);}else inner.material.color.set(0x555577);
   // Alena
+  if(!P.ride){
   alena.position.set(P.x,P.y,P.z);alena.rotation.y=P.face;
   const spd=Math.hypot(P.vx,P.vz);P.walk+=dt*spd*2.2;
   const sw=P.onGround?Math.sin(P.walk)*Math.min(1,spd/3)*0.8:0.5;
@@ -452,16 +737,31 @@ function step(dt){
   if(!P.onGround){parts.armL.rotation.z=-0.6;parts.armR.rotation.z=0.6;}else{parts.armL.rotation.z=parts.armR.rotation.z=0;}
   alena.visible=!(P.inv>0&&Math.floor(P.inv*12)%2===0);
   const gy=groundBelow(P.x,P.y+0.2,P.z);shadow.position.set(P.x,Math.max(gy,WATER)+0.02,P.z);shadow.scale.setScalar(Math.max(0.4,1-(P.y-gy)*0.12));
+  }
+  // vehicles
+  for(const v of vehicles){v.group.position.set(v.x,v.y,v.z);v.group.rotation.y=v.yaw;
+    if(v!==P.ride){if(v.t.water){v.y=WATER-v.t.sink+Math.sin(anim*2.2+v.x)*0.04;v.inner.rotation.x=Math.sin(anim*1.7+v.z)*0.03;}v.roll*=0.9;v.inner.rotation.z=v.roll;}}
+  // who's nearby to ride?
+  let nv=null;if(playing&&!P.ride){let bd=1e9;for(const v of vehicles){const d=Math.hypot(v.x-P.x,v.z-P.z);if(d<v.t.hl+1.6&&Math.abs(v.y-P.y)<2.6&&d<bd){bd=d;nv=v;}}}
+  const key=(state)+(P.ride?P.ride.type+'r':'')+(nv?vehicles.indexOf(nv):'-');if(key!==lastRideKey){nearV=nv;lastRideKey=key;updateRideUI();}
+  // smoke
+  for(let i=0;i<SMOKE_N;i++){const p=smoke[i];
+    if(p.life>0){p.life-=dt/1.1;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;p.vx*=0.97;p.vz*=0.97;p.vy*=0.985;
+      const sc=(0.14+(1-p.life)*0.32)*(p.life<0.3?p.life/0.3:1);q.setFromAxisAngle(v3.set(0,1,0),p.rot+(1-p.life));m4.compose(v3.set(p.x,p.y,p.z),q,one.clone().multiplyScalar(Math.max(0,sc)));}
+    else m4.makeScale(0,0,0);
+    smokeMesh.setMatrixAt(i,m4);}
+  smokeMesh.instanceMatrix.needsUpdate=true;
+  updateDog(dt);
   // camera
-  let d=camYawTarget-camYaw;camYaw+=d*Math.min(1,8*dt);
-  let dist=8.5;const ch=4.6;
-  {const ox=P.x,oy=P.y+1.4,oz=P.z,ex=Math.sin(camYaw)*8.5,ey=ch-1.4,ez=Math.cos(camYaw)*8.5;
-    for(let t=0.08;t<=1.0001;t+=0.04){if(get(Math.floor(ox+ex*t),Math.floor(oy+ey*t),Math.floor(oz+ez*t))){dist=Math.max(1.5,8.5*(t-0.08));break;}}}
-  const k=dist/8.5;
+  let d=camYawTarget-camYaw;d=Math.atan2(Math.sin(d),Math.cos(d));camYaw+=d*Math.min(1,(P.ride?4:8)*dt);
+  const D=P.ride?P.ride.t.camD:8.5;let dist=D;const ch=P.ride?5.8:4.6;
+  {const ox=P.x,oy=P.y+1.4,oz=P.z,ex=Math.sin(camYaw)*D,ey=ch-1.4,ez=Math.cos(camYaw)*D;
+    for(let t=0.08;t<=1.0001;t+=0.04){if(get(Math.floor(ox+ex*t),Math.floor(oy+ey*t),Math.floor(oz+ez*t))){dist=Math.max(1.5,D*(t-0.08));break;}}}
+  const k=dist/D;
   let tx=P.x+Math.sin(camYaw)*dist,tz=P.z+Math.cos(camYaw)*dist,ty=P.y+1.4+(ch-1.4)*k;
   if(state==='start'){const a=anim*0.08;tx=c+Math.sin(a)*34;tz=c+Math.cos(a)*34;ty=24;}
   ty=Math.max(ty,groundBelow(tx,H-1,tz)+0.8);
-  const cr=dist<8.4?18:6;camera.position.x+=(tx-camera.position.x)*Math.min(1,cr*dt);camera.position.z+=(tz-camera.position.z)*Math.min(1,cr*dt);camera.position.y+=(ty-camera.position.y)*Math.min(1,4*dt);
+  const cr=dist<D-0.1?18:6;camera.position.x+=(tx-camera.position.x)*Math.min(1,cr*dt);camera.position.z+=(tz-camera.position.z)*Math.min(1,cr*dt);camera.position.y+=(ty-camera.position.y)*Math.min(1,4*dt);
   if(state==='start')camera.lookAt(c,3,c);else camera.lookAt(P.x,P.y+1.2,P.z);
   // sky follows camera
   window.__sky.position.copy(camera.position);
@@ -480,10 +780,12 @@ let last=performance.now();
 function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
   const n=dt>0.02?2:1;for(let i=0;i<n;i++)step(dt/n);
   renderer.render(scene,camera);requestAnimationFrame(frame);}
-placeSpawn();camera.position.set(c,24,c+34);updateHud();
+reset();camera.position.set(c,24,c+34);updateHud();
 requestAnimationFrame(frame);
 // test/debug hooks
-window.__G={get state(){return state},get player(){return{x:P.x,y:P.y,z:P.z,onGround:P.onGround}},gems,enemies,spikes,portal,spawn,get got(){return got},get lives(){return lives},
+window.__G={vehicles,dog,footOK:(type,x,z,yaw,y)=>footOK(VT[type],x,z,yaw,y),get riding(){return P.ride?P.ride.t.name:null},get nearV(){return nearV?nearV.t.name:null},smokeAlive(){return smoke.filter(s=>s.life>0).length},get smokeSpawned(){return smokeSpawned},
+  audio(){return{ctx:actx?actx.state:null,engine:!!engine,engineType:engine?engine.cfg.type:null,errors:audioErrs.slice()}},isWater:(x,z)=>isWaterCell(Math.floor(x),Math.floor(z)),groundH:(x,z)=>H_(Math.floor(x),Math.floor(z)),
+  get state(){return state},get player(){return{x:P.x,y:P.y,z:P.z,onGround:P.onGround}},gems,enemies,spikes,portal,spawn,get got(){return got},get lives(){return lives},
   get pxScale(){return pxScale},start:startGame,teleport(x,y,z){P.x=x;P.y=y;P.z=z;P.vx=P.vy=P.vz=0;},info(){return renderer.info.render},
   sample(){renderer.render(scene,camera);const gl=renderer.getContext();const w=gl.drawingBufferWidth,h=gl.drawingBufferHeight;const px=new Uint8Array(w*h*4);gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,px);
     const cols=new Set();let nonBlack=0;for(let i=0;i<px.length;i+=4*7){if(px[i]+px[i+1]+px[i+2]>30)nonBlack++;cols.add((px[i]>>4)<<8|(px[i+1]>>4)<<4|(px[i+2]>>4));}return{w,h,nonBlackFrac:nonBlack/(px.length/28),distinctColors:cols.size};}};
